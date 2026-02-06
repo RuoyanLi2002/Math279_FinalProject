@@ -18,4 +18,4 @@ python main.py \
     --save_freq 1 \
     --to_train \
     --model_path "" \
-    --config "config/lstm.yaml"
+    --config "config/neuralode.yaml"

@@ -1,22 +1,17 @@
 import torch
 import torch.nn as nn
 
-class LSTM(nn.Module):
+class GRU(nn.Module):
     def __init__(self, args, config):
         super().__init__()
         input_dim = config.model.input_dim
         hidden_dim = config.model.hidden_dim
         num_layers = config.model.num_layers
-        dropout = config.model.dropout
         out_dim = config.model.out_dim
+        self.num_layers = num_layers
+        self.hidden_dim = hidden_dim
 
-        self.lstm = nn.LSTM(
-            input_dim, 
-            hidden_dim, 
-            num_layers, 
-            batch_first=True, 
-            dropout=dropout
-        )
+        self.gru = nn.GRU(input_dim, hidden_dim, num_layers, batch_first=True)
 
         self.mean_mlp = nn.Sequential(
             nn.Linear(hidden_dim, hidden_dim),
@@ -32,7 +27,8 @@ class LSTM(nn.Module):
         )
 
     def forward(self, x):
-        out, (h_n, c_n) = self.lstm(x)
+        h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim).to(x.device)
+        out, _ = self.gru(x, h0)
         
         last_time_step = out[:, -1, :]
 
