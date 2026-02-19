@@ -8,8 +8,9 @@ import numpy as np
 
 
 from utils import *
-from train import train
+from train import train, train_diffusion
 from eval import eval
+from models.diffusion import Diffusion
 
 
 def save_config(args, original_config_path):
@@ -117,7 +118,10 @@ def main():
     print(f"args.to_train: {args.to_train}")
     if args.to_train:
         train_dataloader = load_train(args)
-        train(args, model, train_dataloader)
+        if isinstance(model, Diffusion):
+            train_diffusion(args, model, train_dataloader)
+        else:
+            train(args, model, train_dataloader)
     else:
         with torch.no_grad():
             eval(args, model)

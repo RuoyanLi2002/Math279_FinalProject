@@ -1,0 +1,7 @@
+model:
+  hidden_dim: 64
+  input_dim: 4
+  module: models.gru
+  name: GRU
+  num_layers: 4
+  out_dim: 4

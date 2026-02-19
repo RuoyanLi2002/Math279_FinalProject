@@ -44,14 +44,14 @@ class NeuralODE(nn.Module):
         h0, (h_n, c_n) = self.lstm(x)
         h0 = h0[:, -1, :]
         out = odeint(self.ode_func, h0, t)
-        print(f"out: {out.shape}")
+        # print(f"out: {out.shape}")
 
         out = out[1]
         
         mu = self.mean_mlp(out)
         var = self.var_mlp(out)
 
-        print(f"mu: {mu.shape}")
-        print(f"var: {var.shape}")
+        # print(f"mu: {mu.shape}")
+        # print(f"var: {var.shape}")
 
         return mu, var

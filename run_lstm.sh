@@ -1,11 +1,11 @@
 #!/bin/bash
 
-export CUDA_VISIBLE_DEVICES=6
+export CUDA_VISIBLE_DEVICES=7
 export OMP_NUM_THREADS=3
 export MKL_NUM_THREADS=3
 
 python main.py \
-    --exp_name "exp/Ours/run0" \
+    --exp_name "exp/LSTM/run0" \
     --seed 0 \
     --dataset_root "/local2/shared_data/us_crsp_nyse" \
     --data_save_path "" \
@@ -18,4 +18,4 @@ python main.py \
     --save_freq 1 \
     --to_train \
     --model_path "" \
-    --config "config/ours.yaml"
+    --config "config/lstm.yaml"

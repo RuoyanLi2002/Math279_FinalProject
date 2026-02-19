@@ -1,11 +1,15 @@
 model:
   act: gelu
+  beta_max: 0.02
+  beta_min: 0.0001
   dropout: 0.0
   input_dim: 4
   mlp_ratio: 4.0
-  module: models.transformer
+  module: models.diffusion
   n_head: 8
   n_hidden: 64
   n_layers: 4
-  name: Transformer
+  name: Diffusion
   out_dim: 4
+  seq_length: 21
+  timesteps: 1000
