@@ -31,12 +31,15 @@ class NeuralODE(nn.Module):
             nn.ReLU(),
             nn.Linear(hidden_dim, out_dim)
         )
-        self.var_mlp = nn.Sequential(
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, out_dim),
-            nn.Softplus() 
-        )
+
+        self.probabilistic = args.probabilistic
+        if args.probabilistic:
+            self.var_mlp = nn.Sequential(
+                nn.Linear(hidden_dim, hidden_dim),
+                nn.ReLU(),
+                nn.Linear(hidden_dim, out_dim),
+                nn.Softplus() 
+            )
 
     def forward(self, x):
         t = torch.tensor([0., 1.]).to(x.device)
@@ -49,7 +52,11 @@ class NeuralODE(nn.Module):
         out = out[1]
         
         mu = self.mean_mlp(out)
-        var = self.var_mlp(out)
+
+        if self.probabilistic:
+            var = self.var_mlp(out)
+        else:
+            var = None
 
         # print(f"mu: {mu.shape}")
         # print(f"var: {var.shape}")

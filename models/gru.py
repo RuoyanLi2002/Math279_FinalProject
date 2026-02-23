@@ -12,19 +12,21 @@ class GRU(nn.Module):
         self.hidden_dim = hidden_dim
 
         self.gru = nn.GRU(input_dim, hidden_dim, num_layers, batch_first=True)
-
-        self.mean_mlp = nn.Sequential(
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, out_dim)
-        )
         
-        self.var_mlp = nn.Sequential(
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, out_dim),
-            nn.Softplus() 
-        )
+        self.mean_mlp = nn.Sequential(
+                nn.Linear(hidden_dim, hidden_dim),
+                nn.ReLU(),
+                nn.Linear(hidden_dim, out_dim)
+            )
+        
+        self.probabilistic = args.probabilistic
+        if args.probabilistic:
+            self.var_mlp = nn.Sequential(
+                nn.Linear(hidden_dim, hidden_dim),
+                nn.ReLU(),
+                nn.Linear(hidden_dim, out_dim),
+                nn.Softplus() 
+            )
 
     def forward(self, x):
         h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim).to(x.device)
@@ -33,6 +35,10 @@ class GRU(nn.Module):
         last_time_step = out[:, -1, :]
 
         mu = self.mean_mlp(last_time_step)
-        var = self.var_mlp(last_time_step)
+
+        if self.probabilistic:
+            var = self.var_mlp(last_time_step)
+        else:
+            var = None
 
         return mu, var

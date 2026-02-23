@@ -11,6 +11,7 @@ from utils import *
 from train import train, train_diffusion
 from eval import eval
 from models.diffusion import Diffusion
+from models.ritdiffusion import RITDiffusion
 
 
 def save_config(args, original_config_path):
@@ -91,6 +92,8 @@ def main():
     parser.add_argument("--batch_size", type=int)
     parser.add_argument("--save_freq", type=int)
     parser.add_argument("--to_train", action="store_true")
+    parser.add_argument("--probabilistic", action="store_true")
+    parser.add_argument("--predict_return", action="store_true")
     parser.add_argument("--model_path", type=str)
 
     parser.add_argument("--config", type=str)
@@ -118,7 +121,7 @@ def main():
     print(f"args.to_train: {args.to_train}")
     if args.to_train:
         train_dataloader = load_train(args)
-        if isinstance(model, Diffusion):
+        if isinstance(model, Diffusion) or isinstance(model, RITDiffusion):
             train_diffusion(args, model, train_dataloader)
         else:
             train(args, model, train_dataloader)

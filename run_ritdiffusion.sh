@@ -5,7 +5,7 @@ export OMP_NUM_THREADS=3
 export MKL_NUM_THREADS=3
 
 python main.py \
-    --exp_name "exp/Transolver_p/run0" \
+    --exp_name "exp/RITDiffusion/run0" \
     --seed 0 \
     --dataset_root "/local2/shared_data/us_crsp_nyse" \
     --data_save_path "" \
@@ -20,4 +20,4 @@ python main.py \
     --probabilistic \
     --predict_return \
     --model_path "" \
-    --config "config/transolver_p.yaml"
+    --config "config/ritdiffusion.yaml"

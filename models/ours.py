@@ -105,12 +105,14 @@ class RITransformer(nn.Module):
             nn.Linear(n_hidden, out_dim)
         )
         
-        self.var_mlp = nn.Sequential(
-            nn.Linear(n_hidden, n_hidden),
-            nn.GELU(),
-            nn.Linear(n_hidden, out_dim),
-            nn.Softplus() 
-        )
+        self.probabilistic = args.probabilistic
+        if args.probabilistic:
+            self.var_mlp = nn.Sequential(
+                nn.Linear(n_hidden, n_hidden),
+                nn.GELU(),
+                nn.Linear(n_hidden, out_dim),
+                nn.Softplus() 
+            )
 
         self.mix = nn.MultiheadAttention(embed_dim=n_hidden, num_heads=1, batch_first=True)
 
@@ -147,6 +149,10 @@ class RITransformer(nn.Module):
         x = x[:, -1, :]
         
         mu = self.mean_mlp(x)
-        var = self.var_mlp(x)
+
+        if self.probabilistic:
+            var = self.var_mlp(x)
+        else:
+            var = None
 
         return mu, var

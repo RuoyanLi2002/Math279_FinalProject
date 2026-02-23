@@ -1,11 +1,21 @@
 import os
 import time
 import pickle
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.optim.lr_scheduler import CosineAnnealingLR
 
+
+def process_data(x, y):
+    close_t = x[:, -1, -1] 
+    close_t_plus_1 = y[:, -1] 
+    y_return = np.log(close_t_plus_1 / close_t)
+    y_return = y_return.reshape(-1, 1)
+
+    return x, y_return
+    
 
 class GaussianNLLLoss(nn.Module):
     def __init__(self, eps=1e-6, reduction='mean'):
@@ -39,7 +49,11 @@ def train(args, model, dataloader):
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
-    loss_fnc = GaussianNLLLoss()
+
+    if args.probabilistic:
+        loss_fnc = GaussianNLLLoss()
+    else:
+        loss_fnc = nn.MSELoss()
 
     for epoch in range(args.num_epochs):
         model.train()
@@ -53,6 +67,9 @@ def train(args, model, dataloader):
             if torch.isinf(x).any() or torch.isinf(y).any():
                 print(f"FATAL: Found Inf")
                 exit()
+
+            if args.predict_return:
+                x, y = process_data(x, y)
         
             x = x.to(device)
             y = y.to(device)
@@ -60,7 +77,10 @@ def train(args, model, dataloader):
             optimizer.zero_grad()
             mu, var = model(x)
 
-            loss = loss_fnc(mu, var, y)
+            if args.probabilistic:
+                loss = loss_fnc(mu, var, y)
+            else:
+                loss = loss_fnc(mu, y)
             # print(f"loss: {loss}")
 
             loss.backward()
@@ -130,12 +150,16 @@ def train_diffusion(args, model, dataloader):
             if torch.isinf(x).any() or torch.isinf(y).any():
                 print(f"FATAL: Found Inf")
                 exit()
+
+            if args.predict_return:
+                x, y = process_data(x, y)
         
             x = x.to(device)
             y = y.to(device)
 
             optimizer.zero_grad()
             _, loss = model(x, y, loss_fnc)
+            # print(f"loss: {loss}")
 
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)

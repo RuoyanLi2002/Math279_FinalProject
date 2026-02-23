@@ -88,12 +88,14 @@ class Transformer(nn.Module):
             nn.Linear(n_hidden, out_dim)
         )
         
-        self.var_mlp = nn.Sequential(
-            nn.Linear(n_hidden, n_hidden),
-            nn.GELU(),
-            nn.Linear(n_hidden, out_dim),
-            nn.Softplus() 
-        )
+        self.probabilistic = args.probabilistic
+        if args.probabilistic:
+            self.var_mlp = nn.Sequential(
+                nn.Linear(n_hidden, n_hidden),
+                nn.GELU(),
+                nn.Linear(n_hidden, out_dim),
+                nn.Softplus() 
+            )
 
 
 
@@ -109,6 +111,10 @@ class Transformer(nn.Module):
         x = x[:, -1, :]
         
         mu = self.mean_mlp(x)
-        var = self.var_mlp(x)
+
+        if self.probabilistic:
+            var = self.var_mlp(x)
+        else:
+            var = None
 
         return mu, var

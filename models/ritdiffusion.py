@@ -71,10 +71,27 @@ class Transolver_block(nn.Module):
         self.mlp = MLP(hidden_dim, int(hidden_dim * mlp_ratio), hidden_dim, n_layers=0, res=False, act=act)
         self.mlp_new = MLP(hidden_dim, int(hidden_dim * mlp_ratio), hidden_dim, n_layers=0, res=False, act=act)
 
-    def forward(self, fx):
-        attn_output, attn_weights = self.Attn(self.ln_1(fx), self.ln_1(fx), self.ln_1(fx), need_weights=False)
+        self.condition_proj = nn.Sequential(
+            nn.SiLU(),
+            nn.Linear(hidden_dim, 4 * hidden_dim)
+        )
+
+        nn.init.zeros_(self.condition_proj[-1].weight)
+        nn.init.zeros_(self.condition_proj[-1].bias)
+
+    def forward(self, fx, cond_token):
+        cond_params = self.condition_proj(cond_token)
+        gamma_1, beta_1, gamma_2, beta_2 = cond_params.chunk(4, dim=-1)
+        gamma_1, beta_1 = gamma_1.unsqueeze(1), beta_1.unsqueeze(1)
+        gamma_2, beta_2 = gamma_2.unsqueeze(1), beta_2.unsqueeze(1)
+
+        norm_fx_1 = self.ln_1(fx) * (1 + gamma_1) + beta_1
+        attn_output, _ = self.Attn(norm_fx_1, norm_fx_1, norm_fx_1, need_weights=False)
         fx = attn_output + fx
-        fx = self.mlp(self.ln_2(fx)) + fx
+
+        norm_fx_2 = self.ln_2(fx) * (1 + gamma_2) + beta_2
+        fx = self.mlp(norm_fx_2) + fx
+
         return fx
 
 
@@ -116,7 +133,28 @@ class Transformer(nn.Module):
 
         self.n_hidden = n_hidden
 
+        self.mix = nn.MultiheadAttention(embed_dim=n_hidden, num_heads=1, batch_first=True)
 
+    def regime_infer(self, x):
+        batch_size, seq_len, n_hidden = x.shape
+
+        random_token = torch.randn(batch_size, 1, n_hidden)
+        random_token = random_token.to(x.device)
+        x_extended = torch.cat((x, random_token), dim=1)
+
+        x_extended, _ = self.mix(x_extended, x_extended, x_extended)
+        regime_token = x_extended[:, -1, :]
+        regime_token= self.gram_schmidt(x.mean(dim=1), regime_token)
+
+        return regime_token
+
+    def gram_schmidt(self, u, v):
+        dot_uv = torch.sum(v * u, dim=1, keepdim=True)
+        dot_uu = torch.sum(u * u, dim=1, keepdim=True)
+        proj_u_v = (dot_uv / (dot_uu + 1e-8)) * u
+        orthogonal_token = v - proj_u_v
+
+        return orthogonal_token
 
     def forward(self, condition, noise, t):
         temb = get_timestep_embedding(t, self.n_hidden)
@@ -127,21 +165,23 @@ class Transformer(nn.Module):
 
         condition = self.cond_preprocess(condition)
         noise = self.noise_preprocess(noise)
+        regime_token = self.regime_infer(condition)
+
         x = torch.concat([condition, noise], dim = 1)
 
         x = x + self.pos_encoder + temb
 
         for block in self.blocks:
-            x = block(x)
+            x = block(x, regime_token)
 
         x = self.out(x)
         x = x[:, -1, :]
 
         return x
     
-class Diffusion(nn.Module):
+class RITDiffusion(nn.Module):
     def __init__(self, args, config):
-        super(Diffusion, self).__init__()
+        super(RITDiffusion, self).__init__()
         self.beta_min = config.model.beta_min
         self.beta_max = config.model.beta_max
         self.timesteps = config.model.timesteps
@@ -161,7 +201,7 @@ class Diffusion(nn.Module):
 
     def to(self, *args, **kwargs):
         """Override the default `to` method to ensure all tensors are moved to the specified device."""
-        super(Diffusion, self).to(*args, **kwargs)
+        super(RITDiffusion, self).to(*args, **kwargs)
 
         device = next(self.parameters()).device
         self.betas = self.betas.to(device)
@@ -198,6 +238,7 @@ class Diffusion(nn.Module):
         t = torch.randint(low=0, high=self.timesteps, size=(target.shape[0],)).to(x.device)
 
         perturbed, epsilon = self.forward_diffusion(target, t)
+        print(f"perturbed: {perturbed.shape}")
 
         pred_epsilon = self.model(x, perturbed, t)
         

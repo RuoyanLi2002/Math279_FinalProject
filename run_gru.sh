@@ -17,5 +17,7 @@ python main.py \
     --batch_size 128 \
     --save_freq 1 \
     --to_train \
+    --probabilistic \
+    --predict_return \
     --model_path "" \
     --config "config/gru.yaml"
