@@ -35,7 +35,7 @@ def impute_missing_values(data_array):
     return cleaned_array
 
 
-def load_dataset(args, start_year=2015, end_year=2020):
+def load_dataset(args, start_year=2015, end_year=2020, shuffle=True):
     all_files = []
     for year in range(start_year, end_year + 1):
         pattern = os.path.join(args.dataset_root, str(year), '*.csv.gz')
@@ -126,7 +126,7 @@ def load_dataset(args, start_year=2015, end_year=2020):
     
     # Create Dataset and DataLoader
     dataset = TensorDataset(tensor_x, tensor_y)
-    dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True)
+    dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=shuffle)
     
     return dataloader
 

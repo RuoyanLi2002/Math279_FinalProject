@@ -20,4 +20,4 @@ python main.py \
     --probabilistic \
     --predict_return \
     --model_path "" \
-    --config "config/diffusion.yaml"
+    --config "exp/Diffusion/run0/config.yaml"

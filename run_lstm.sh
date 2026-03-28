@@ -20,4 +20,4 @@ python main.py \
     --probabilistic \
     --predict_return \
     --model_path "" \
-    --config "config/lstm.yaml"
+    --config "exp/LSTM/run0/config.yaml"

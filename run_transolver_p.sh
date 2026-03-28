@@ -20,4 +20,4 @@ python main.py \
     --probabilistic \
     --predict_return \
     --model_path "" \
-    --config "config/transolver_p.yaml"
+    --config "exp/Transolver_p/run0/config.yaml"

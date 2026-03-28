@@ -230,6 +230,26 @@ class Diffusion(nn.Module):
             pred_x0 = 1/sqrt_alpha * (x_t - (1-alpha) / sqrt_one_minus_alpha_bar * pred_epsilon)
 
             return pred_x0
+
+    def sample_for_eval(self, condition, shape):
+        device = next(self.parameters()).device
+        x_t = torch.randn(shape, device=device)
+
+        for t in range(self.timesteps - 1, -1, -1):
+            timestep = torch.full((x_t.shape[0],), t, dtype=torch.long, device=device)
+            pred_epsilon = self.model(condition, x_t, timestep)
+            if pred_epsilon.ndim == 2:
+                pred_epsilon = pred_epsilon.unsqueeze(1)
+
+            alpha = self.extract(self.alphas, timestep)
+            sqrt_one_minus_alpha_bar = self.extract(self.sqrt_one_minus_alpha_bars, timestep)
+            sqrt_alpha = self.extract(self.sqrt_alphas, timestep)
+
+            x_t = (1.0 / sqrt_alpha) * (
+                x_t - (1 - alpha) / sqrt_one_minus_alpha_bar * pred_epsilon
+            )
+
+        return x_t
         
     
     def ddpm_sample(self, x, target):

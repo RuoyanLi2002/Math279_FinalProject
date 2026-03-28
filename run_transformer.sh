@@ -20,4 +20,4 @@ python main.py \
     --probabilistic \
     --predict_return \
     --model_path "" \
-    --config "config/transformer.yaml"
+    --config "exp/Transformer/run0/config.yaml"

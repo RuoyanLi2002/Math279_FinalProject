@@ -20,4 +20,4 @@ python main.py \
     --probabilistic \
     --predict_return \
     --model_path "" \
-    --config "config/ritdiffusion.yaml"
+    --config "exp/RITDiffusion/run0/config.yaml"

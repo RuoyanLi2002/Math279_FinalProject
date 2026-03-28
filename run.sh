@@ -20,4 +20,4 @@ python main.py \
     --probabilistic \
     --predict_return \
     --model_path "" \
-    --config "config/ours.yaml"
+    --config "exp/Ours/run0/config.yaml"
